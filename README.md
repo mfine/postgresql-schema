@@ -9,8 +9,8 @@ PostgreSQL Schema is a database migration tool. Based on [Schema Evolution Manag
 [1]: https://github.com/mfine/postgresql-schema
 [2]: https://img.shields.io/hackage/v/postgresql-schema.svg?style=flat
 [3]: https://hackage.haskell.org/package/postgresql-schema
-[4]: https://img.shields.io/travis/swift-nav/postgresql-schema/master.svg?style=flat
-[5]: https://travis-ci.org/swift-nav/postgresql-schema
+[4]: https://img.shields.io/travis/mfine/postgresql-schema/master.svg?style=flat
+[5]: https://travis-ci.org/mfine/postgresql-schema
 [6]: https://img.shields.io/hackage-deps/v/postgresql-schema.svg?style=flat
 [7]: http://packdeps.haskellers.com/feed?needle=postgresql-schema
 [8]: https://github.com/mbryzek/schema-evolution-manager
