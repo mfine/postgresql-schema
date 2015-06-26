@@ -27,6 +27,21 @@ library
   default-extensions:  NoImplicitPrelude
                        OverloadedStrings
 
+executable schema-add
+  hs-source-dirs:      main
+  main-is:             Add.hs
+  ghc-options:         -Wall
+  default-language:    Haskell2010
+  build-depends:       base >= 4.7 && < 5
+                     , base-prelude
+                     , optparse-applicative
+                     , postgresql-schema
+                     , shelly
+                     , text
+  default-extensions:  NoImplicitPrelude
+                       OverloadedStrings
+                       RecordWildCards
+
 executable schema-apply
   hs-source-dirs:      main
   main-is:             Apply.hs
@@ -34,7 +49,6 @@ executable schema-apply
   default-language:    Haskell2010
   build-depends:       base >= 4.7 && < 5
                      , base-prelude
-                     , formatting
                      , optparse-applicative
                      , postgresql-schema
                      , shelly
