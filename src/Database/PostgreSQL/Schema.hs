@@ -51,13 +51,6 @@ countSchema =
             " FROM pg_namespace " %
             " WHERE nspname = '" % stext % "' " )
 
-countMigration :: FilePath -> Text -> Text -> Text
-countMigration migration table schema =
-  sformat ( " SELECT count(*) " %
-            " FROM " % stext % "." % stext %
-            " WHERE filename = '" % stext % "' " )
-    schema table (toTextIgnore migration)
-
 insertMigration :: FilePath -> Text -> Text -> Text
 insertMigration migration table schema =
   sformat ( " INSERT INTO " % stext % "." % stext % " (filename) " %
@@ -84,11 +77,6 @@ checkSchema schema url = do
   r <- psqlCommand (countSchema schema) url
   return $ strip r == "0"
 
-checkMigration :: FilePath -> Text -> Text -> Text -> Sh Bool
-checkMigration migration table schema url = do
-  r <- psqlCommand (countMigration migration table schema) url
-  return $ strip r == "0"
-
 filterMigrations :: [FilePath] -> Text -> Text -> Text -> Sh [FilePath]
 filterMigrations migrations table schema url = do
   r <- psqlCommand (selectMigrations migrations table schema) url
@@ -102,31 +90,19 @@ findMigrations dir = do
   migrations <- findWhen test_f dir
   forM migrations $ relativeTo dir
 
-migrate :: FilePath -> FilePath -> Text -> Text -> Text -> Sh ()
-migrate migration dir table schema url = do
-  echo out
-  contents <- readfile migration
-  appendfile (dir </> migration) "\\set ON_ERROR_STOP true\n\n"
-  appendfile (dir </> migration) contents
-  appendfile (dir </> migration) $ insertMigration migration table schema
-  psqlFile (dir </> migration) url where
-    out =
-      sformat ( "M " % stext % " -> " % stext )
-        (toTextIgnore migration) table
-
-migrateWithCheck :: [FilePath] -> Text -> Text -> Text -> Sh ()
-migrateWithCheck migrations table schema url =
+migrate :: [FilePath] -> Text -> Text -> Text -> Sh ()
+migrate migrations table schema url =
   withTmpDir $ \dir ->
     forM_ migrations $ \migration -> do
-      check <- checkMigration migration table schema url
-      when check $
-        migrate migration dir table schema url
-
-migrateWithoutCheck :: [FilePath] -> Text -> Text -> Text -> Sh ()
-migrateWithoutCheck migrations table schema url =
-  withTmpDir $ \dir ->
-    forM_ migrations $ \migration ->
-      migrate migration dir table schema url
+      echo $ out migration
+      contents <- readfile migration
+      appendfile (dir </> migration) "\\set ON_ERROR_STOP true\n\n"
+      appendfile (dir </> migration) contents
+      appendfile (dir </> migration) $ insertMigration migration table schema
+      psqlFile (dir </> migration) url where
+        out migration =
+          sformat ( "M " % stext % " -> " % stext )
+            (toTextIgnore migration) table
 
 
 -- API
@@ -154,11 +130,11 @@ bootstrap dir table schema url = do
     check <- checkSchema schema url
     when check $ do
       echo "Bootstrapping..."
-      migrateWithoutCheck migrations table schema url
+      migrate migrations table schema url
     migrations' <- filterMigrations migrations table schema url
     unless (null migrations') $ do
       echo "Bootstrap migrating..."
-      migrateWithCheck migrations' table schema url
+      migrate migrations' table schema url
 
 -- | Apply migrations to a database. Applies all migrations that have
 -- not been applied yet and records their application.
@@ -169,4 +145,4 @@ converge dir table schema url = do
     migrations' <- filterMigrations migrations table schema url
     unless (null migrations') $ do
       echo "Migrating..."
-      migrateWithCheck migrations' table schema url
+      migrate migrations' table schema url
