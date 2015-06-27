@@ -27,11 +27,10 @@ psqlFile f url =
               , url ]
 
 countSchema :: Text -> Text
-countSchema schema =
+countSchema =
   sformat ( " SELECT count(*) " %
             " FROM pg_namespace " %
             " WHERE nspname = '" % stext % "' " )
-    schema
 
 countMigration :: FilePath -> Text -> Text -> Text
 countMigration migration table schema =
@@ -68,8 +67,8 @@ checkMigration migration table schema url = do
   r <- psqlCommand (countMigration migration table schema) url
   return $ strip r == "0"
 
-getMigrations :: [FilePath] -> Text -> Text -> Text -> Sh [FilePath]
-getMigrations migrations table schema url = do
+filterMigrations :: [FilePath] -> Text -> Text -> Text -> Sh [FilePath]
+filterMigrations migrations table schema url = do
   r <- psqlCommand (selectMigrations migrations table schema) url
   return $ migrations \\ map fromText (lines r)
 
@@ -80,11 +79,15 @@ findMigrations dir = do
 
 migrate :: FilePath -> FilePath -> Text -> Text -> Text -> Sh ()
 migrate migration dir table schema url = do
+  echo out
   contents <- readfile migration
   appendfile (dir </> migration) "\\set ON_ERROR_STOP true\n\n"
   appendfile (dir </> migration) contents
   appendfile (dir </> migration) $ insertMigration migration table schema
-  psqlFile (dir </> migration) url
+  psqlFile (dir </> migration) url where
+    out =
+      sformat ( "M " % stext % " -> " % stext )
+        (toTextIgnore migration) table
 
 migrateWithCheck :: [FilePath] -> Text -> Text -> Text -> Sh ()
 migrateWithCheck migrations table schema url =
@@ -105,18 +108,28 @@ bootstrap dir table schema url = do
   migrations <- findMigrations dir
   chdir dir $ do
     check <- checkSchema schema url
-    when check $
+    when check $ do
+      echo "Bootstrapping..."
       migrateWithoutCheck migrations table schema url
-    migrations' <- getMigrations migrations table schema url
-    migrateWithCheck migrations' table schema url
+    migrations' <- filterMigrations migrations table schema url
+    unless (null migrations') $ do
+      echo "Bootstrap migrating..."
+      migrateWithCheck migrations' table schema url
 
 converge :: FilePath -> Text -> Text -> Text -> Sh ()
 converge dir table schema url = do
   migrations <- findMigrations dir
   chdir dir $ do
-    migrations' <- getMigrations migrations table schema url
-    migrateWithCheck migrations' table schema url
+    migrations' <- filterMigrations migrations table schema url
+    unless (null migrations') $ do
+      echo "Migrating..."
+      migrateWithCheck migrations' table schema url
 
 add :: FilePath -> FilePath -> FilePath -> Sh ()
-add migration file dir =
-  mv file (dir </> migration)
+add migration file dir = do
+  echo out
+  mv file (dir </> migration) where
+    out =
+      sformat ( "A " % stext % " -> " % stext )
+        (toTextIgnore file)
+        (toTextIgnore (dir </> migration))
