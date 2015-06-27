@@ -13,7 +13,7 @@ containing migrations. By default, the directory `migrations` in the
 current working directory is used. These parameters can be overridden
 on the command line:
 
-    schema-add --file new.sql --dir scripts
+    $ schema-add --file new.sql --dir scripts
 
 ### Applying Migrations
 
@@ -23,7 +23,7 @@ current working directory is used, and the database specified in
 `DATABASE_URL` environment variable is used. These parameters can be
 overridden on the command line:
 
-    schema-apply --url postgres://user@localhost/database --dir scripts
+    $ schema-apply --url postgres://user@localhost/database --dir scripts
 
 [1]: https://github.com/mfine/postgresql-schema
 [2]: https://img.shields.io/hackage/v/postgresql-schema.svg?style=flat
