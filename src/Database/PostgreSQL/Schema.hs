@@ -1,5 +1,18 @@
+-- |
+-- Module:      Database.PostgreSQL.Schema
+-- Copyright:   (c) 2015 Mark Fine
+-- License:     MIT
+-- Maintainer:  Mark Fine <mark.fine@gmail.com>
+-- Stability:   experimental
+-- Portability: portable
+--
+-- Functions for working with PostgreSQL migrations.
+
 module Database.PostgreSQL.Schema
-  ( add
+  (
+  -- * Adding Migrations
+    add
+  -- * Applying Migrations
   , bootstrap
   , converge
   ) where
@@ -8,6 +21,9 @@ import BasePrelude hiding ( FilePath, (%), intercalate, lines )
 import Data.Text          ( Text, intercalate, lines, strip )
 import Formatting         ( (%), sformat, stext )
 import Shelly
+
+
+-- psql
 
 psqlCommand :: Text -> Text -> Sh Text
 psqlCommand c url =
@@ -25,6 +41,9 @@ psqlFile f url =
               , "--file"
               , toTextIgnore f
               , url ]
+
+
+-- SQL
 
 countSchema :: Text -> Text
 countSchema =
@@ -57,6 +76,9 @@ selectMigrations migrations table schema =
       intercalate ", " $ flip map migrations $ \migration ->
         sformat ("'" % stext % "'") (toTextIgnore migration)
 
+
+-- psql + SQL
+
 checkSchema :: Text -> Text -> Sh Bool
 checkSchema schema url = do
   r <- psqlCommand (countSchema schema) url
@@ -71,6 +93,9 @@ filterMigrations :: [FilePath] -> Text -> Text -> Text -> Sh [FilePath]
 filterMigrations migrations table schema url = do
   r <- psqlCommand (selectMigrations migrations table schema) url
   return $ migrations \\ map fromText (lines r)
+
+
+-- migrations
 
 findMigrations :: FilePath -> Sh [FilePath]
 findMigrations dir = do
@@ -103,6 +128,25 @@ migrateWithoutCheck migrations table schema url =
     forM_ migrations $ \migration ->
       migrate migration dir table schema url
 
+
+-- API
+
+-- | Add a DDL migration file to a migrations directory. Fails if
+-- migration file or migrations directory do not exist.
+add :: FilePath -> FilePath -> FilePath -> Sh ()
+add migration file dir = do
+  echo out
+  mv file (dir </> migration) where
+    out =
+      sformat ( "A " % stext % " -> " % stext )
+        (toTextIgnore file)
+        (toTextIgnore (dir </> migration))
+
+-- | Apply bootstrap migrations to a database. Checks if a database
+-- has been previously bootstrapped, and applies all bootstrap
+-- migrations if it has not been previously bootstrapped. Applies
+-- all bootstrap migrations that have not been applied yet and records
+-- their application.
 bootstrap :: FilePath -> Text -> Text -> Text -> Sh ()
 bootstrap dir table schema url = do
   migrations <- findMigrations dir
@@ -116,6 +160,8 @@ bootstrap dir table schema url = do
       echo "Bootstrap migrating..."
       migrateWithCheck migrations' table schema url
 
+-- | Apply migrations to a database. Applies all migrations that have
+-- not been applied yet and records their application.
 converge :: FilePath -> Text -> Text -> Text -> Sh ()
 converge dir table schema url = do
   migrations <- findMigrations dir
@@ -124,12 +170,3 @@ converge dir table schema url = do
     unless (null migrations') $ do
       echo "Migrating..."
       migrateWithCheck migrations' table schema url
-
-add :: FilePath -> FilePath -> FilePath -> Sh ()
-add migration file dir = do
-  echo out
-  mv file (dir </> migration) where
-    out =
-      sformat ( "A " % stext % " -> " % stext )
-        (toTextIgnore file)
-        (toTextIgnore (dir </> migration))

@@ -1,3 +1,13 @@
+-- |
+-- Module:      Apply
+-- Copyright:   (c) 2015 Mark Fine
+-- License:     MIT
+-- Maintainer:  Mark Fine <mark.fine@gmail.com>
+-- Stability:   experimental
+-- Portability: portable
+--
+-- Tool for applying PostgreSQL migrations.
+
 import BasePrelude         hiding ( FilePath )
 import Data.Text                  ( Text, pack )
 import Database.PostgreSQL.Schema ( bootstrap, converge )

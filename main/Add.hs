@@ -1,3 +1,13 @@
+-- |
+-- Module:      Add
+-- Copyright:   (c) 2015 Mark Fine
+-- License:     MIT
+-- Maintainer:  Mark Fine <mark.fine@gmail.com>
+-- Stability:   experimental
+-- Portability: portable
+--
+-- Tool for adding PostgreSQL migrations.
+
 import BasePrelude
 import Data.Text                  ( pack )
 import Data.Time.Clock            ( getCurrentTime )
