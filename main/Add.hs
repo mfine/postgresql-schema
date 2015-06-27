@@ -19,6 +19,7 @@ import System.Locale              ( defaultTimeLocale )
 
 data Args = Args
   { aFile :: String
+  , aName :: Maybe String
   , aDir  :: Maybe String
   } deriving ( Eq, Read, Show )
 
@@ -34,24 +35,29 @@ args =
           <> metavar "FILE"
           <> help    "Migration File" )
       <*> optional ( strOption
+          (  long    "name"
+          <> metavar "NAME"
+          <> help    "Migration Name" ) )
+      <*> optional ( strOption
           (  long    "dir"
           <> metavar "DIR"
           <> help    "Migrations Directory" ) )
 
-newMigration :: IO String
-newMigration = do
-  now <- getCurrentTime
-  return $ formatTime defaultTimeLocale "%Y%m%d-%H%M%S.sql" now
-
-exec :: String -> String -> IO ()
-exec file dir = do
-  migration <- newMigration
+exec :: String -> String -> String -> IO ()
+exec migration file dir =
   shelly $
     add (fromText (pack migration)) (fromText (pack file)) (fromText (pack dir))
+
+newMigration :: Maybe String -> IO String
+newMigration name = do
+  now <- getCurrentTime
+  return $ intercalate "-" ( timestamp now : maybeToList name ) ++ ".sql" where
+    timestamp = formatTime defaultTimeLocale "%Y%m%d-%H%M%S"
 
 main :: IO ()
 main =
   execParser args >>= call where
-    call Args{..} =
-      exec aFile (fromMaybe "migrations" aDir)
+    call Args{..} = do
+      migration <- newMigration aName
+      exec migration aFile (fromMaybe "migrations" aDir)
 
