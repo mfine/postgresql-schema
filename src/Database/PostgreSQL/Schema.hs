@@ -1,5 +1,6 @@
 module Database.PostgreSQL.Schema
-  ( bootstrap
+  ( add
+  , bootstrap
   , converge
   ) where
 
@@ -115,3 +116,7 @@ converge dir table schema url = do
   chdir dir $ do
     migrations' <- getMigrations migrations table schema url
     migrateWithCheck migrations' table schema url
+
+add :: FilePath -> FilePath -> FilePath -> Sh ()
+add migration file dir =
+  mv file (dir </> migration)

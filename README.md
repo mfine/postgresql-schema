@@ -6,10 +6,19 @@
 
 PostgreSQL Schema is a database migration tool. Based on [Schema Evolution Manager][8].
 
+### Adding Migrations
+
+The tool `schema-add` takes as parameters a file and a directory
+containing migrations. By default, the directory `migrations` in the
+current working directory is used. These parameters can be overridden
+on the command line:
+
+    schema-add --file new.sql --dir scripts
+
 ### Applying Migrations
 
 The tool `schema-apply` takes as parameters a database and a directory
-containing migrations.  By default, the directory `migrations` in the
+containing migrations. By default, the directory `migrations` in the
 current working directory is used, and the database specified in
 `DATABASE_URL` environment variable is used. These parameters can be
 overridden on the command line:

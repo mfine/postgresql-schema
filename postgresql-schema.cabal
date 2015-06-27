@@ -34,6 +34,8 @@ executable schema-add
   default-language:    Haskell2010
   build-depends:       base >= 4.7 && < 5
                      , base-prelude
+                     , time
+                     , old-locale
                      , optparse-applicative
                      , postgresql-schema
                      , shelly
