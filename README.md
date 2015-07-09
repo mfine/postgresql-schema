@@ -8,7 +8,9 @@ PostgreSQL Schema is a database migration tool. Based on [Schema Evolution Manag
 
 ### Installation
 
-The tools can be installed through cabal or stack. Cabal:
+The tools can be installed through cabal or stack.
+
+Cabal:
 
     $ cabal install postgresql-schema
 
