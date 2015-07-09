@@ -6,6 +6,18 @@
 
 PostgreSQL Schema is a database migration tool. Based on [Schema Evolution Manager][8].
 
+### Installation
+
+The tools can be installed through cabal or stack. Cabal:
+
+    $ cabal install postgresql-schema
+
+Stack:
+
+    $ git clone git@github.com:mfine/postgresql-schema.git
+    $ cd postgresql-schema
+    $ stack install
+
 ### Adding Migrations
 
 The tool `schema-add` takes as parameters a file and a directory
@@ -13,7 +25,7 @@ containing migrations. By default, the directory `migrations` in the
 current working directory is used. These parameters can be overridden
 on the command line:
 
-    $ schema-add --file new.sql --dir scripts
+    $ schema-add --file new.sql --name add-users --dir scripts
 
 ### Applying Migrations
 
