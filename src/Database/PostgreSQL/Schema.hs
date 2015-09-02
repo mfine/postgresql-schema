@@ -85,9 +85,14 @@ filterMigrations migrations table schema url = do
 
 -- migrations
 
+ls_f :: FilePath -> Sh [FilePath]
+ls_f dir = do
+  items <- ls dir
+  filterM test_f items
+
 findMigrations :: FilePath -> Sh [FilePath]
 findMigrations dir = do
-  migrations <- findWhen test_f dir
+  migrations <- ls_f dir
   forM migrations $ relativeTo dir
 
 migrate :: [FilePath] -> Text -> Text -> Text -> Sh ()
