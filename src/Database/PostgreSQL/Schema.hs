@@ -90,6 +90,9 @@ filterMigrations migrations table schema url = do
       remove x = foldr f [] where
         f a b = if p a x then b else a : b
 
+
+--- migrations
+
 ls_f :: FilePath -> Sh [FilePath]
 ls_f dir = do
   items <- ls dir
