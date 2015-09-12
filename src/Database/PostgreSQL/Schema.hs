@@ -91,7 +91,7 @@ filterMigrations migrations table schema url = do
         f a b = if p a x then b else a : b
 
 
---- migrations
+-- migrations
 
 ls_f :: FilePath -> Sh [FilePath]
 ls_f dir = do
