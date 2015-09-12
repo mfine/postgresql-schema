@@ -133,13 +133,12 @@ migrate migrations table schema url =
 -- | Add a DDL migration file to a migrations directory. Fails if
 -- migration file or migrations directory do not exist.
 add :: FilePath -> FilePath -> FilePath -> Sh ()
-add migration file dir =
-  chdir dir $ do
-    echo out
-    mv file migration where
-      out =
-        sformat ( "A " % stext % " -> " % stext )
-          (toTextIgnore file) (toTextIgnore migration)
+add migration file dir = do
+  echo out
+  mv file (dir </> migration) where
+    out =
+      sformat ( "A " % stext % " -> " % stext )
+        (toTextIgnore file) (toTextIgnore (dir </> migration))
 
 -- | Apply bootstrap migrations to a database. Checks if a database
 -- has been previously bootstrapped, and applies all bootstrap
