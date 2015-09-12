@@ -143,8 +143,8 @@ bootstrap dir table schema url = do
 
 -- | Apply migrations to a database. Applies all migrations that have
 -- not been applied yet and records their application.
-converge :: FilePath -> Text -> Text -> Text -> Sh ()
-converge dir table schema url = do
+converge :: Bool -> FilePath -> Text -> Text -> Text -> Sh ()
+converge recur dir table schema url = do
   migrations <- findMigrations dir
   chdir dir $ do
     migrations' <- filterMigrations migrations table schema url

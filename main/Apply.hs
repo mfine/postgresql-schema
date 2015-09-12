@@ -14,10 +14,12 @@ import Database.PostgreSQL.Schema ( bootstrap, converge )
 import Options.Applicative
 import Paths_postgresql_schema    ( getDataFileName )
 import Shelly
+import System.IO           hiding ( FilePath )
 
 data Args = Args
-  { aDir :: Maybe String
-  , aUrl :: Maybe String
+  { aRecur :: Bool
+  , aDir   :: Maybe String
+  , aUrl   :: Maybe String
   } deriving ( Eq, Read, Show )
 
 args :: ParserInfo Args
@@ -27,7 +29,10 @@ args =
     <> header   "schema-apply: Apply Schema to PostgreSQL Database"
     <> progDesc "Apply Schema" ) where
     args' = Args
-      <$> optional ( strOption
+      <$> switch
+          (  long    "recurse"
+          <> help    "Recurse Migrations Directory" )
+      <*> optional ( strOption
           (  long    "dir"
           <> metavar "DIR"
           <> help    "Migrations Directory" ) )
@@ -36,18 +41,18 @@ args =
           <> metavar "URL"
           <> help    "Database URL" ) )
 
-apply :: FilePath -> FilePath -> Text -> Sh ()
-apply bootstrapDir dir url = do
+apply :: Bool -> FilePath -> FilePath -> Text -> Sh ()
+apply recur bootstrapDir dir url = do
   bootstrap bootstrapDir bootstrapTable schema url
-  converge dir table schema url where
+  converge recur dir table schema url where
     bootstrapTable = "bootstrap_scripts"
     table = "scripts"
     schema = "schema_evolution_manager"
 
-exec :: String -> String -> String -> IO ()
-exec bootstrapDir dir url =
+exec :: Bool -> String -> String -> String -> IO ()
+exec recur bootstrapDir dir url =
   shelly $
-    apply (fromText (pack bootstrapDir)) (fromText (pack dir)) (pack url)
+    apply recur (fromText (pack bootstrapDir)) (fromText (pack dir)) (pack url)
 
 main :: IO ()
 main =
@@ -55,4 +60,8 @@ main =
     call Args{..} = do
       url <- lookupEnv "DATABASE_URL"
       bootstrapDir <- getDataFileName "migrations"
-      maybe (return ()) (exec bootstrapDir (fromMaybe "migrations" aDir)) (aUrl <|> url)
+      maybe
+        (err "No Database URL")
+        (exec aRecur bootstrapDir (fromMaybe "migrations" aDir))
+        (aUrl <|> url) where
+          err = hPutStrLn stderr
