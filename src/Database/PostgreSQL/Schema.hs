@@ -17,10 +17,40 @@ module Database.PostgreSQL.Schema
   , converge
   ) where
 
-import BasePrelude hiding ( FilePath, (%), intercalate, lines )
-import Data.Text          ( Text, intercalate, lines, strip )
+import BasePrelude hiding ( FilePath, (%), intercalate, lines, forM_, concat, forM, foldr, map, bracket, (++) )
+import BasicPrelude hiding ( intercalate, (</>) )
+import Data.Text          ( Text, intercalate, lines, strip, unpack )
+import Database.PostgreSQL.Simple
 import Formatting         ( (%), sformat, stext )
 import Shelly
+
+
+-- experimental
+
+withConn :: Text -> (Connection -> IO a) -> IO a
+withConn url =
+  bracket (connectPostgreSQL (encodeUtf8 url)) close
+
+query' :: (FromRow f, ToRow t) => Query -> t -> Text -> IO [f]
+query' q p url =
+  withConn url $ \c ->
+    query c q p
+
+countSchema :: Text -> Text -> IO [Only Int]
+countSchema schema =
+  query' (fromString q) p where
+    q = " SELECT count(*) \
+        \ FROM pg_namespace \
+        \ WHERE nspname = ? "
+    p = Only schema
+
+selectMigrations' :: [FilePath] -> Text -> Text -> Text -> IO [Only Text]
+selectMigrations' migrations schema table =
+  query' (fromString q) p where
+    q = " SELECT filename \
+        \ FROM " ++ unpack schema ++ "." ++ unpack table ++
+        " WHERE filename IN ? "
+    p = Only $ In $ map toTextIgnore migrations
 
 
 -- types
@@ -50,12 +80,6 @@ psqlFile f url =
 
 -- SQL
 
-countSchema :: Text -> Text
-countSchema =
-  sformat ( " SELECT count(*) " %
-            " FROM pg_namespace " %
-            " WHERE nspname = '" % stext % "' " )
-
 insertMigration :: FilePath -> Text -> Text -> Text
 insertMigration migration table schema =
   sformat ( " INSERT INTO " % stext % "." % stext % " (filename) " %
@@ -77,10 +101,10 @@ selectMigrations migrations table schema =
 
 -- psql + SQL
 
-checkSchema :: Text -> Text -> Sh Bool
+checkSchema :: Text -> Text -> IO Bool
 checkSchema schema url = do
-  r <- psqlCommand (countSchema schema) url
-  return $ strip r == "0"
+  [Only count] <- countSchema schema url
+  return $ count == 0
 
 filterMigrations :: [Migration] -> Text -> Text -> Text -> Sh [Migration]
 filterMigrations migrations table schema url = do
@@ -89,6 +113,10 @@ filterMigrations migrations table schema url = do
     removes p = foldr remove where
       remove x = foldr f [] where
         f a b = if p a x then b else a : b
+
+filterMigrations' migrations table schema url = do
+  migrations' <- selectMigrations' migrations schema table url
+  return migrations'
 
 
 -- migrations
@@ -151,7 +179,7 @@ add migration file dir = do
 bootstrap :: FilePath -> Text -> Text -> Text -> Sh ()
 bootstrap dir table schema url = do
   migrations <- lsMigrations dir
-  check <- checkSchema schema url
+  check <- liftIO $ checkSchema schema url
   when check $ do
     echo "Bootstrapping..."
     migrate migrations table schema url

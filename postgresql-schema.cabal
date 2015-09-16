@@ -21,7 +21,9 @@ library
   ghc-options:         -Wall -fno-warn-orphans
   build-depends:       base >= 4.7 && < 5
                      , base-prelude
+                     , basic-prelude
                      , formatting
+                     , postgresql-simple
                      , shelly
                      , text
   default-extensions:  NoImplicitPrelude
@@ -34,12 +36,13 @@ executable schema-add
   default-language:    Haskell2010
   build-depends:       base >= 4.7 && < 5
                      , base-prelude
-                     , time
+                     , basic-prelude
                      , old-locale
                      , optparse-applicative
                      , postgresql-schema
                      , shelly
                      , text
+                     , time
   default-extensions:  NoImplicitPrelude
                        OverloadedStrings
                        RecordWildCards
@@ -52,6 +55,7 @@ executable schema-apply
   default-language:    Haskell2010
   build-depends:       base >= 4.7 && < 5
                      , base-prelude
+                     , basic-prelude
                      , optparse-applicative
                      , postgresql-schema
                      , shelly
