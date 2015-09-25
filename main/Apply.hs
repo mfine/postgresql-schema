@@ -8,7 +8,7 @@
 --
 -- Tool for applying PostgreSQL migrations.
 
-import BasicPrelude
+import BasicPrelude hiding ( FilePath )
 import Data.Text ( pack )
 import Database.PostgreSQL.Schema
 import Options.Applicative

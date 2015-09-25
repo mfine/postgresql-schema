@@ -8,7 +8,7 @@
 --
 -- Tool for adding PostgreSQL migrations.
 
-import BasicPrelude
+import BasicPrelude hiding ( FilePath )
 import Data.Text ( pack )
 import Data.Time.Clock
 import Data.Time.Format

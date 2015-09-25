@@ -17,7 +17,7 @@ module Database.PostgreSQL.Schema
   , converge
   ) where
 
-import BasicPrelude hiding ( (</>) )
+import BasicPrelude hiding ( FilePath, (</>) )
 import Data.Text ( append, unpack )
 import Database.PostgreSQL.Simple
 import Shelly
