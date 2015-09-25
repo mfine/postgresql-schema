@@ -117,7 +117,7 @@ migrate :: [Migration] -> Text -> Text -> Text -> Sh ()
 migrate migrations table schema url =
   forM_ migrations $ uncurry $ \dir migration ->
     chdir dir $ do
-      echo $ " M " +-+ toTextIgnore migration +-+ " -> " +-+ table
+      echo $ "M " +-+ toTextIgnore migration +-+ " -> " +-+ table
       contents <- readfile migration
       withTmpDir $ \dir' ->
         chdir dir' $ do
