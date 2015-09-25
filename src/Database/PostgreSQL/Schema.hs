@@ -17,107 +17,78 @@ module Database.PostgreSQL.Schema
   , converge
   ) where
 
-import BasePrelude hiding ( FilePath, (%), intercalate, lines, forM_, concat, forM, foldr, map, bracket, (++) )
-import BasicPrelude hiding ( intercalate, (</>) )
-import Data.Text          ( Text, intercalate, lines, strip, unpack )
+import BasicPrelude hiding ( (</>) )
+import Data.Text ( append, unpack )
 import Database.PostgreSQL.Simple
-import Formatting         ( (%), sformat, stext )
 import Shelly
-
-
--- experimental
-
-withConn :: Text -> (Connection -> IO a) -> IO a
-withConn url =
-  bracket (connectPostgreSQL (encodeUtf8 url)) close
-
-query' :: (FromRow f, ToRow t) => Query -> t -> Text -> IO [f]
-query' q p url =
-  withConn url $ \c ->
-    query c q p
-
-countSchema :: Text -> Text -> IO [Only Int]
-countSchema schema =
-  query' (fromString q) p where
-    q = " SELECT count(*) \
-        \ FROM pg_namespace \
-        \ WHERE nspname = ? "
-    p = Only schema
-
-selectMigrations' :: [FilePath] -> Text -> Text -> Text -> IO [Only Text]
-selectMigrations' migrations schema table =
-  query' (fromString q) p where
-    q = " SELECT filename \
-        \ FROM " ++ unpack schema ++ "." ++ unpack table ++
-        " WHERE filename IN ? "
-    p = Only $ In $ map toTextIgnore migrations
-
-
--- types
 
 type Migration = (FilePath, FilePath)
 
+(+-+) :: Text -> Text -> Text
+(+-+) = append
+
+-- SQL
+
+countSchemaSQL :: Text
+countSchemaSQL =
+  " SELECT count(*) \
+  \ FROM pg_namespace \
+  \ WHERE nspname = ? "
+
+selectMigrationsSQL :: Text -> Text -> Text
+selectMigrationsSQL table schema =
+  " SELECT filename \
+  \ FROM " +-+ schema +-+ "." +-+ table +-+
+  " WHERE filename IN ? "
+
+insertMigrationSQL :: FilePath -> Text -> Text -> Text
+insertMigrationSQL migration table schema =
+  " INSERT INTO " +-+ schema +-+ "." +-+ table +-+ " (filename) \
+  \ SELECT '" +-+ toTextIgnore migration +-+ "' \
+  \ WHERE NOT EXISTS \
+  \   ( SELECT TRUE FROM " +-+ schema +-+ "." +-+ table +-+
+  "     WHERE filename = '" +-+ toTextIgnore migration +-+ "' ) "
 
 -- psql
 
-psqlCommand :: Text -> Text -> Sh Text
-psqlCommand c url =
-  run "psql" [ "--no-align"
-             , "--tuples-only"
-             , "--command"
-             , c
-             , url ]
-
-psqlFile :: FilePath -> Text -> Sh ()
-psqlFile f url =
+psql :: FilePath -> Text -> Sh ()
+psql migration url =
   run_ "psql" [ "--no-align"
               , "--tuples-only"
               , "--quiet"
               , "--file"
-              , toTextIgnore f
+              , toTextIgnore migration
               , url ]
 
+-- queries
 
--- SQL
+query' :: (FromRow f, ToRow t) => Text -> t -> Text -> IO [f]
+query' q p url =
+  bracket (connectPostgreSQL (encodeUtf8 url)) close $ \c ->
+    query c (fromString $ unpack q) p
 
-insertMigration :: FilePath -> Text -> Text -> Text
-insertMigration migration table schema =
-  sformat ( " INSERT INTO " % stext % "." % stext % " (filename) " %
-            " SELECT '" % stext % "' " %
-            " WHERE NOT EXISTS " %
-            " ( SELECT TRUE FROM " % stext % "." % stext %
-            "   WHERE filename = '" % stext % "') " )
-    schema table (toTextIgnore migration) schema table (toTextIgnore migration)
+countSchema :: Text -> Text -> IO [Only Int]
+countSchema schema =
+  query' countSchemaSQL $ Only schema
 
-selectMigrations :: [FilePath] -> Text -> Text -> Text
+selectMigrations :: [FilePath] -> Text -> Text -> Text -> IO [Only Text]
 selectMigrations migrations table schema =
-  sformat ( " SELECT filename " %
-            " FROM " % stext % "." % stext %
-            " WHERE filename IN ( " % stext % " ) " )
-    schema table $
-      intercalate ", " $ flip map migrations $ \migration ->
-        sformat ("'" % stext % "'") (toTextIgnore migration)
+  query' (selectMigrationsSQL table schema) $ Only $ In $ map toTextIgnore migrations
 
-
--- psql + SQL
+-- interpreted queries
 
 checkSchema :: Text -> Text -> IO Bool
 checkSchema schema url = do
-  [Only count] <- countSchema schema url
-  return $ count == 0
+  result <- countSchema schema url
+  return $ maybe False ((== 0) . fromOnly) (listToMaybe result)
 
-filterMigrations :: [Migration] -> Text -> Text -> Text -> Sh [Migration]
+filterMigrations :: [Migration] -> Text -> Text -> Text -> IO [Migration]
 filterMigrations migrations table schema url = do
-  r <- psqlCommand (selectMigrations (map snd migrations) table schema) url
-  return $ removes ((==) . snd) migrations (map fromText (lines r)) where
+  results <- selectMigrations (map snd migrations) table schema url
+  return $ removes ((==) . snd) migrations (map (fromText . fromOnly) results) where
     removes p = foldr remove where
       remove x = foldr f [] where
         f a b = if p a x then b else a : b
-
-filterMigrations' migrations table schema url = do
-  migrations' <- selectMigrations' migrations schema table url
-  return migrations'
-
 
 -- migrations
 
@@ -146,18 +117,14 @@ migrate :: [Migration] -> Text -> Text -> Text -> Sh ()
 migrate migrations table schema url =
   forM_ migrations $ uncurry $ \dir migration ->
     chdir dir $ do
-      echo $ out migration
+      echo $ " M " +-+ toTextIgnore migration +-+ " -> " +-+ table
       contents <- readfile migration
       withTmpDir $ \dir' ->
         chdir dir' $ do
           appendfile migration "\\set ON_ERROR_STOP true\n\n"
           appendfile migration contents
-          appendfile migration $ insertMigration migration table schema
-          psqlFile migration url where
-            out migration =
-              sformat ( "M " % stext % " -> " % stext )
-                (toTextIgnore migration) table
-
+          appendfile migration $ insertMigrationSQL migration table schema
+          psql migration url
 
 -- API
 
@@ -165,11 +132,8 @@ migrate migrations table schema url =
 -- migration file or migrations directory do not exist.
 add :: FilePath -> FilePath -> FilePath -> Sh ()
 add migration file dir = do
-  echo out
-  mv file (dir </> migration) where
-    out =
-      sformat ( "A " % stext % " -> " % stext )
-        (toTextIgnore file) (toTextIgnore (dir </> migration))
+  echo $ "A " +-+ toTextIgnore file +-+ " -> " +-+ toTextIgnore (dir </> migration)
+  mv file (dir </> migration)
 
 -- | Apply bootstrap migrations to a database. Checks if a database
 -- has been previously bootstrapped, and applies all bootstrap
@@ -180,21 +144,21 @@ bootstrap :: FilePath -> Text -> Text -> Text -> Sh ()
 bootstrap dir table schema url = do
   migrations <- lsMigrations dir
   check <- liftIO $ checkSchema schema url
-  when check $ do
+  if check then do
     echo "Bootstrapping..."
     migrate migrations table schema url
-  migrations' <- filterMigrations migrations table schema url
-  unless (null migrations') $ do
-    echo "Bootstrap migrating..."
-    migrate migrations' table schema url
-
+  else do
+    migrations' <- liftIO $ filterMigrations migrations table schema url
+    unless (null migrations') $ do
+      echo "Bootstrap migrating..."
+      migrate migrations' table schema url
 
 -- | Apply migrations to a database. Applies all migrations that have
 -- not been applied yet and records their application.
 converge :: Bool -> FilePath -> Text -> Text -> Text -> Sh ()
 converge recur dir table schema url = do
   migrations <- searchMigrations recur dir
-  migrations' <- filterMigrations migrations table schema url
+  migrations' <- liftIO $ filterMigrations migrations table schema url
   unless (null migrations') $ do
     echo "Migrating..."
     migrate migrations' table schema url

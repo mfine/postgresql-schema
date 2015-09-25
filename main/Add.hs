@@ -8,14 +8,14 @@
 --
 -- Tool for adding PostgreSQL migrations.
 
-import BasePrelude
-import Data.Text                  ( pack )
-import Data.Time.Clock            ( getCurrentTime )
-import Data.Time.Format           ( formatTime )
-import Database.PostgreSQL.Schema ( add )
+import BasicPrelude
+import Data.Text ( pack )
+import Data.Time.Clock
+import Data.Time.Format
+import Database.PostgreSQL.Schema
 import Options.Applicative
 import Shelly
-import System.Locale              ( defaultTimeLocale )
+import System.Locale
 
 data Args = Args
   { aFile :: String
