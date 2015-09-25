@@ -8,13 +8,14 @@
 --
 -- Tool for applying PostgreSQL migrations.
 
-import BasePrelude         hiding ( FilePath )
-import Data.Text                  ( Text, pack )
-import Database.PostgreSQL.Schema ( bootstrap, converge )
+import BasicPrelude hiding ( FilePath )
+import Data.Text ( pack )
+import Database.PostgreSQL.Schema
 import Options.Applicative
-import Paths_postgresql_schema    ( getDataFileName )
+import Paths_postgresql_schema
 import Shelly
-import System.IO           hiding ( FilePath )
+import System.IO hiding ( FilePath )
+import System.Environment
 
 data Args = Args
   { aRecur :: Bool
