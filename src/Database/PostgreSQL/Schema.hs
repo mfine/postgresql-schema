@@ -18,14 +18,13 @@ module Database.PostgreSQL.Schema
   ) where
 
 import BasicPrelude hiding ( FilePath, (</>) )
-import Data.Text ( append, unpack )
+import Data.Text ( unpack )
 import Database.PostgreSQL.Simple
 import Shelly
 
-type Migration = (FilePath, FilePath)
+-- types
 
-(+-+) :: Text -> Text -> Text
-(+-+) = append
+type Migration = (FilePath, FilePath)
 
 -- SQL
 
@@ -38,16 +37,16 @@ countSchemaSQL =
 selectMigrationsSQL :: Text -> Text -> Text
 selectMigrationsSQL table schema =
   " SELECT filename \
-  \ FROM " +-+ schema +-+ "." +-+ table +-+
+  \ FROM " <> schema <> "." <> table <>
   " WHERE filename IN ? "
 
 insertMigrationSQL :: FilePath -> Text -> Text -> Text
 insertMigrationSQL migration table schema =
-  " INSERT INTO " +-+ schema +-+ "." +-+ table +-+ " (filename) \
-  \ SELECT '" +-+ toTextIgnore migration +-+ "' \
+  " INSERT INTO " <> schema <> "." <> table <> " (filename) \
+  \ SELECT '" <> toTextIgnore migration <> "' \
   \ WHERE NOT EXISTS \
-  \   ( SELECT TRUE FROM " +-+ schema +-+ "." +-+ table +-+
-  "     WHERE filename = '" +-+ toTextIgnore migration +-+ "' ) "
+  \   ( SELECT TRUE FROM " <> schema <> "." <> table <>
+  "     WHERE filename = '" <> toTextIgnore migration <> "' ) "
 
 -- psql
 
@@ -117,7 +116,7 @@ migrate :: [Migration] -> Text -> Text -> Text -> Sh ()
 migrate migrations table schema url =
   forM_ migrations $ uncurry $ \dir migration ->
     chdir dir $ do
-      echo $ "M " +-+ toTextIgnore migration +-+ " -> " +-+ table
+      echo $ "M " <> toTextIgnore migration <> " -> " <> table
       contents <- readfile migration
       withTmpDir $ \dir' ->
         chdir dir' $ do
@@ -132,7 +131,7 @@ migrate migrations table schema url =
 -- migration file or migrations directory do not exist.
 add :: FilePath -> FilePath -> FilePath -> Sh ()
 add migration file dir = do
-  echo $ "A " +-+ toTextIgnore file +-+ " -> " +-+ toTextIgnore (dir </> migration)
+  echo $ "A " <> toTextIgnore file <> " -> " <> toTextIgnore (dir </> migration)
   mv file (dir </> migration)
 
 -- | Apply bootstrap migrations to a database. Checks if a database
