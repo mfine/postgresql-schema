@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 -- |
 -- Module:      Add
 -- Copyright:   (c) 2015 Mark Fine
@@ -15,7 +16,10 @@ import Data.Time.Format
 import Database.PostgreSQL.Schema
 import Options.Applicative
 import Shelly
+#if MIN_VERSION_time(1,5,0)
+#else
 import System.Locale
+#endif
 
 data Args = Args
   { aFile :: String
