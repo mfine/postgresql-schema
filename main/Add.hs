@@ -13,13 +13,10 @@ import BasicPrelude hiding ( FilePath )
 import Data.Text ( pack )
 import Data.Time.Clock
 import Data.Time.Format
+import Data.Time.Locale.Compat
 import Database.PostgreSQL.Schema
 import Options.Applicative
 import Shelly
-#if MIN_VERSION_time(1,5,0)
-#else
-import System.Locale
-#endif
 
 data Args = Args
   { aFile :: String
