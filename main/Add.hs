@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP #-}
 -- |
 -- Module:      Add
 -- Copyright:   (c) 2015 Mark Fine
@@ -12,8 +11,8 @@
 import BasicPrelude hiding ( FilePath )
 import Data.Text ( pack )
 import Data.Time.Clock
-import Data.Time.Format
 import Data.Time.Locale.Compat
+import Data.Time.Format
 import Database.PostgreSQL.Schema
 import Options.Applicative
 import Shelly
