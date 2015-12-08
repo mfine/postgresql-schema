@@ -15,6 +15,8 @@ module Database.PostgreSQL.Schema
   -- * Applying Migrations
   , bootstrap
   , converge
+  -- * Clearing Migrations
+  , clear
   ) where
 
 import BasicPrelude hiding ( FilePath, (</>) )
@@ -48,6 +50,14 @@ insertMigrationSQL migration table schema =
   \   ( SELECT TRUE FROM " <> schema <> "." <> table <>
   "     WHERE filename = '" <> toTextIgnore migration <> "' ) "
 
+dropSchemaSQL :: Text -> Text
+dropSchemaSQL schema =
+  " DROP SCHEMA IF EXISTS " <> schema <> " CASCADE "
+
+createSchemaSQL :: Text -> Text
+createSchemaSQL schema =
+  " CREATE SCHEMA IF NOT EXISTS " <> schema <> " "
+
 -- psql
 
 psql :: FilePath -> Text -> Sh ()
@@ -66,6 +76,11 @@ query' q p url =
   bracket (connectPostgreSQL (encodeUtf8 url)) close $ \c ->
     query c (fromString $ unpack q) p
 
+execute_' :: Text -> Text -> IO ()
+execute_' q url =
+  bracket (connectPostgreSQL (encodeUtf8 url)) close $ \c ->
+    void $ execute_ c (fromString $ unpack q)
+
 countSchema :: Text -> Text -> IO [Only Int]
 countSchema schema =
   query' countSchemaSQL $ Only schema
@@ -73,6 +88,14 @@ countSchema schema =
 selectMigrations :: [FilePath] -> Text -> Text -> Text -> IO [Only Text]
 selectMigrations migrations table schema =
   query' (selectMigrationsSQL table schema) $ Only $ In $ map toTextIgnore migrations
+
+dropSchema :: Text -> Text -> IO ()
+dropSchema schema =
+  execute_' (dropSchemaSQL schema)
+
+createSchema :: Text -> Text -> IO ()
+createSchema schema =
+  execute_' (createSchemaSQL schema)
 
 -- interpreted queries
 
@@ -161,3 +184,11 @@ converge recur dir table schema url = do
   unless (null migrations') $ do
     echo "Migrating..."
     migrate migrations' table schema url
+
+clear :: Text -> Text -> Sh ()
+clear schema url = do
+  echo "Dropping..."
+  liftIO $ do
+    dropSchema schema url
+    dropSchema "public" url
+    createSchema "public" url
