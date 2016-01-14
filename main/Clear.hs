@@ -18,6 +18,7 @@ import System.IO hiding ( putStr, getLine )
 
 data Args = Args
   { aUrl :: Maybe String
+  , aYes :: Bool
   } deriving ( Eq, Read, Show )
 
 args :: ParserInfo Args
@@ -31,6 +32,9 @@ args =
           (  long    "url"
           <> metavar "URL"
           <> help    "Database URL" ) )
+      <*> switch
+          (  long "yes"
+          <> help  "Assume 'yes'" )
 
 prompt :: String -> IO Bool
 prompt url = do
@@ -38,9 +42,9 @@ prompt url = do
   hFlush stdout
   (== "y") <$> getLine
 
-exec :: String -> IO ()
-exec url = do
-  y <- prompt url
+exec :: Bool -> String -> IO ()
+exec yes url = do
+  y <- if yes then return True else prompt url
   when y $ shelly $
     clear schema (pack url) where
       schema = "schema_evolution_manager"
@@ -50,5 +54,5 @@ main =
   execParser args >>= call where
     call Args{..} = do
       url <- lookupEnv "DATABASE_URL"
-      maybe (err "No Database URL") exec (aUrl <|> url) where
+      maybe (err "No Database URL") (exec aYes) (aUrl <|> url) where
         err = hPutStrLn stderr
