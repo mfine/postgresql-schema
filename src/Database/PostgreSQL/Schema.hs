@@ -65,6 +65,7 @@ psql migration url =
   run_ "psql" [ "--no-align"
               , "--tuples-only"
               , "--quiet"
+              , "--single-transaction"
               , "--file"
               , toTextIgnore migration
               , url ]
