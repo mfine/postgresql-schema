@@ -1,5 +1,5 @@
 name:                  postgresql-schema
-version:               0.1.11
+version:               VERSION
 synopsis:              PostgreSQL Schema Management
 description:           Please see README.md
 homepage:              https://github.com/mfine/postgresql-schema
@@ -10,7 +10,7 @@ maintainer:            mark.fine@gmail.com
 copyright:             Copyright (C) 2015 Mark Fine
 category:              Database
 build-type:            Simple
-cabal-version:         >= 1.10
+cabal-version:         >= 1.22
 data-files:            migrations/20130318-105434.sql
                      , migrations/20130318-105456.sql
 
@@ -19,7 +19,7 @@ library
   default-language:    Haskell2010
   hs-source-dirs:      src
   ghc-options:         -Wall -fno-warn-orphans
-  build-depends:       base >= 4.7 && < 5
+  build-depends:       base >= 4.8 && < 5
                      , basic-prelude
                      , postgresql-simple
                      , shelly
@@ -32,7 +32,7 @@ executable schema-add
   main-is:             Add.hs
   ghc-options:         -Wall
   default-language:    Haskell2010
-  build-depends:       base >= 4.7 && < 5
+  build-depends:       base >= 4.8 && < 5
                      , basic-prelude
                      , optparse-applicative
                      , postgresql-schema
@@ -49,7 +49,7 @@ executable schema-apply
   other-modules:       Paths_postgresql_schema
   ghc-options:         -Wall
   default-language:    Haskell2010
-  build-depends:       base >= 4.7 && < 5
+  build-depends:       base >= 4.8 && < 5
                      , basic-prelude
                      , optparse-applicative
                      , postgresql-schema
@@ -64,7 +64,7 @@ executable schema-clear
   main-is:             Clear.hs
   ghc-options:         -Wall
   default-language:    Haskell2010
-  build-depends:       base >= 4.7 && < 5
+  build-depends:       base >= 4.8 && < 5
                      , basic-prelude
                      , optparse-applicative
                      , postgresql-schema
