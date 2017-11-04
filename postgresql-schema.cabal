@@ -1,5 +1,5 @@
 name:                  postgresql-schema
-version:               0.1.12
+version:               0.1.13
 synopsis:              PostgreSQL Schema Management
 description:           Please see README.md
 homepage:              https://github.com/mfine/postgresql-schema
