@@ -1,3 +1,27 @@
-language: haskell
-ghc:
-- 7.8
+sudo: false
+
+language: c
+
+addons:
+  apt:
+    packages:
+    - libgmp-dev
+
+cache:
+  apt: true
+  directories:
+    - $HOME/.stack/
+    - .stack-work/
+
+before_install:
+  - mkdir -p $HOME/.local/bin
+  - export PATH=$HOME/.local/bin:$PATH
+  - travis_retry curl -L https://www.stackage.org/stack/linux-x86_64 | tar xz --wildcards --strip-components=1 -C $HOME/.local/bin '*/stack'
+
+install:
+  - stack update
+  - stack setup
+  - stack install hlint
+
+script:
+  - ./Shakefile.hs sanity
