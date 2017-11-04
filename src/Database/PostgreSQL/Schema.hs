@@ -19,10 +19,12 @@ module Database.PostgreSQL.Schema
   , clear
   ) where
 
-import BasicPrelude hiding ( FilePath, (</>) )
-import Data.Text ( unpack )
+import BasicPrelude               hiding (FilePath, (</>))
+import Data.Text                  (unpack)
 import Database.PostgreSQL.Simple
 import Shelly
+
+{-# ANN module ("HLint: ignore Use camelCase"::String) #-}
 
 -- types
 

@@ -9,12 +9,12 @@
 -- Tool for clearing PostgreSQL migrations.
 
 import BasicPrelude
-import Data.Text ( pack )
+import Data.Text                  (pack)
 import Database.PostgreSQL.Schema
 import Options.Applicative
 import Shelly
 import System.Environment
-import System.IO hiding ( putStr, getLine )
+import System.IO                  hiding (getLine, putStr)
 
 data Args = Args
   { aUrl :: Maybe String

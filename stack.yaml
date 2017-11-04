@@ -1,5 +1,1 @@
-flags: {}
-packages:
-- '.'
-extra-deps: []
-resolver: lts-6.35
+stack-nightly.yaml
