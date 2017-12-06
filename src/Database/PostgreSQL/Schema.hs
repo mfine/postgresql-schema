@@ -20,6 +20,7 @@ module Database.PostgreSQL.Schema
   ) where
 
 import BasicPrelude               hiding (FilePath, (</>))
+import qualified Control.Exception as E
 import Data.Text                  (unpack)
 import Database.PostgreSQL.Simple
 import Shelly
@@ -76,12 +77,12 @@ psql migration url =
 
 query' :: (FromRow f, ToRow t) => Text -> t -> Text -> IO [f]
 query' q p url =
-  bracket (connectPostgreSQL (encodeUtf8 url)) close $ \c ->
+  E.bracket (connectPostgreSQL (encodeUtf8 url)) close $ \c ->
     query c (fromString $ unpack q) p
 
 execute_' :: Text -> Text -> IO ()
 execute_' q url =
-  bracket (connectPostgreSQL (encodeUtf8 url)) close $ \c ->
+  E.bracket (connectPostgreSQL (encodeUtf8 url)) close $ \c ->
     void $ execute_ c (fromString $ unpack q)
 
 countSchema :: Text -> Text -> IO [Only Int]
