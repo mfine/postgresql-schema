@@ -13,6 +13,11 @@ cache:
     - $HOME/.stack/
     - .stack-work/
 
+matrix:
+  include:
+    - env: STACK_YAML=stack-lts-6.yaml
+    - env: STACK_YAML=stack-nightly.yaml
+
 before_install:
   - mkdir -p $HOME/.local/bin
   - export PATH=$HOME/.local/bin:$PATH
