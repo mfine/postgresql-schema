@@ -104,17 +104,16 @@ createSchema schema =
 -- interpreted queries
 
 checkSchema :: Text -> Text -> IO Bool
-checkSchema schema url = do
-  result <- countSchema schema url
-  return $ maybe False ((== 0) . fromOnly) (listToMaybe result)
+checkSchema schema url =
+  maybe False ((== 0) . fromOnly) . listToMaybe <$> countSchema schema url
 
 filterMigrations :: [Migration] -> Text -> Text -> Text -> IO [Migration]
-filterMigrations migrations table schema url = do
-  results <- selectMigrations (map snd migrations) table schema url
-  return $ removes ((==) . snd) migrations (map (fromText . fromOnly) results) where
-    removes p = foldr remove where
-      remove x = foldr f [] where
-        f a b = if p a x then b else a : b
+filterMigrations migrations table schema url =
+  removes ((==) . snd) migrations . map (fromText . fromOnly) <$>
+    selectMigrations (map snd migrations) table schema url where
+      removes p = foldr remove where
+        remove x = foldr f [] where
+          f a b = if p a x then b else a : b
 
 -- migrations
 
@@ -127,13 +126,13 @@ lsMigrations :: FilePath -> Sh [Migration]
 lsMigrations dir = do
   migrations <- ls_f dir
   migrations' <- forM migrations $ relativeTo dir
-  return $ sortBy (comparing snd) $ zip (repeat dir) migrations'
+  pure $ sortBy (comparing snd) $ zip (repeat dir) migrations'
 
 findMigrations :: FilePath -> Sh [Migration]
 findMigrations dir = do
   dirs <- findWhen test_d dir
   migrations <- forM (dir : dirs) lsMigrations
-  return $ sortBy (comparing snd) $ concat migrations
+  pure $ sortBy (comparing snd) $ concat migrations
 
 searchMigrations :: Bool -> FilePath -> Sh [Migration]
 searchMigrations recur =
