@@ -50,7 +50,7 @@ exec migration file dir =
 newMigration :: Maybe String -> IO String
 newMigration name = do
   now <- getCurrentTime
-  return $ intercalate "-" ( timestamp now : maybeToList name ) ++ ".sql" where
+  pure $ intercalate "-" ( timestamp now : maybeToList name ) ++ ".sql" where
     timestamp = formatTime defaultTimeLocale "%Y%m%d-%H%M%S"
 
 main :: IO ()

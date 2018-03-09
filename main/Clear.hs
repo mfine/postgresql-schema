@@ -44,7 +44,7 @@ prompt url = do
 
 exec :: Bool -> String -> IO ()
 exec yes url = do
-  y <- if yes then return True else prompt url
+  y <- if yes then pure True else prompt url
   when y $ shelly $
     clear schema (pack url) where
       schema = "schema_evolution_manager"
